@@ -75,7 +75,7 @@ NWS requires clients to identify themselves with a `User-Agent` header. This app
 ```text
 CanAmWeatherApp/
 |-- Models/
-|   |-- ForcastPeriod.cs
+|   |-- ForecastPeriod.cs
 |   |-- Zone.cs
 |-- Services/
 |   |-- NwsApiClient.cs

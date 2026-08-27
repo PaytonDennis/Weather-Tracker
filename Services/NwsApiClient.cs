@@ -24,18 +24,15 @@ public class NwsApiClient
 		if (state.Length != 2 || !state.All(char.IsLetter))
 			throw new ArgumentException("Enter a two-letter state abbreviation.", nameof(state));
 
-		var response = await GetJsonAsync<ZoneCollection>($"zones/public?area={Uri.EscapeDataString(state)}&include_geometry=true");
+		var response = await GetJsonAsync<ZoneCollection>($"zones/public?area={Uri.EscapeDataString(state)}");
 		return response.Features
 			.Where(feature => feature.Properties is not null)
 			.Select(feature =>
 			{
-				var point = GetRepresentativePoint(feature.Geometry?.Coordinates);
 				return new Zone
 				{
 					Id = feature.Properties!.Id,
 					Name = feature.Properties.Name,
-					Latitude = point.Latitude,
-					Longitude = point.Longitude,
 					ObservationStationUrl = feature.Properties.ObservationStations.FirstOrDefault() ?? ""
 				};
 			})
@@ -52,7 +49,7 @@ public class NwsApiClient
 				throw new InvalidOperationException("The NWS API did not provide a location for this zone.");
 
 			var station = await GetJsonAsync<StationResponse>(zone.ObservationStationUrl);
-			var stationPoint = GetRepresentativePoint(station.Geometry?.Coordinates);
+			var stationPoint = GetPoint(station.Geometry?.Coordinates);
 			zone.Latitude = stationPoint.Latitude;
 			zone.Longitude = stationPoint.Longitude;
 		}
@@ -77,31 +74,11 @@ public class NwsApiClient
 			?? throw new JsonException("The NWS API returned an empty response.");
 	}
 
-	private static (double Latitude, double Longitude) GetRepresentativePoint(JsonElement? coordinates)
+	private static (double Latitude, double Longitude) GetPoint(double[]? coordinates)
 	{
-		var points = new List<(double Longitude, double Latitude)>();
-		if (coordinates is JsonElement value)
-			CollectCoordinatePairs(value, points);
-
-		if (points.Count == 0)
-			return (double.NaN, double.NaN);
-
-		return (points.Average(point => point.Latitude), points.Average(point => point.Longitude));
-	}
-
-	private static void CollectCoordinatePairs(JsonElement value, List<(double Longitude, double Latitude)> points)
-	{
-		if (value.ValueKind != JsonValueKind.Array)
-			return;
-
-		if (value.GetArrayLength() >= 2 && value[0].ValueKind == JsonValueKind.Number && value[1].ValueKind == JsonValueKind.Number)
-		{
-			points.Add((value[0].GetDouble(), value[1].GetDouble()));
-			return;
-		}
-
-		foreach (var child in value.EnumerateArray())
-			CollectCoordinatePairs(child, points);
+		return coordinates is { Length: >= 2 }
+			? (coordinates[1], coordinates[0])
+			: (double.NaN, double.NaN);
 	}
 
 	private sealed class ZoneCollection
@@ -112,7 +89,6 @@ public class NwsApiClient
 	private sealed class ZoneFeature
 	{
 		public ZoneProperties? Properties { get; set; }
-		public Geometry? Geometry { get; set; }
 	}
 
 	private sealed class ZoneProperties
@@ -124,7 +100,7 @@ public class NwsApiClient
 
 	private sealed class Geometry
 	{
-		public JsonElement Coordinates { get; set; }
+		public double[]? Coordinates { get; set; }
 	}
 
 	private sealed class PointResponse
