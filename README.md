@@ -1,4 +1,4 @@
-# CanAm Weather App
+# Weather App
 
 A C# console application that retrieves daily weather forecasts from the National Weather Service API.
 
@@ -15,6 +15,7 @@ A C# console application that retrieves daily weather forecasts from the Nationa
   - Short conditions
   - Detailed forecast text
 - Handles invalid input, empty results, API failures, and unexpected API responses.
+
 
 ## Requirements
 
