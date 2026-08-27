@@ -16,6 +16,7 @@ A C# console application that retrieves daily weather forecasts from the Nationa
   - Detailed forecast text
 - Handles invalid input, empty results, API failures, and unexpected API responses.
 
+
 ## Requirements
 
 - .NET 10 SDK
